@@ -27,14 +27,18 @@ chrome.extension.sendMessage({}, function(response) {
            // check if the property of the NavItem todo is the same as the todo object given to us
            // if it is not the same, we delete the navItem and return true
             if(array_of_navItems.length > 0){
+
                for(var item = 0; item < array_of_navitems.length; item++){
-                   if(array_of_navItems[item].description = todo_object.description){
+
+                   if(array_of_navItems[item].description == todo_object.description){
                        if(array_of_navItems[item].checked != todo_object.checked){
+                           console.log(array_of_navItems[item]);
                            array_of_navItems[item].navItem.remove();
                            return true;
                        }
                    } else if(array_of_navItems[item].description != todo_object.description){
                        // this condition also checks if the item is not even in the list of navItem and return true
+                       console.log("its a new item all together");
                        return true;
                    }
                }
@@ -72,22 +76,21 @@ chrome.extension.sendMessage({}, function(response) {
         // we add new todo items to the list of todos
         Array.observe(array_of_todos, function(changes){
             // the SDK has been loaded, now do something with it!
-
+                console.log(changes)
             for(var i = 0; i < array_of_todos.length; i++){
-                console.log(array_of_navitems[i]);
-                console.log(array_of_todos[i]);
                 var shouldUpdate = shouldUpdateNavItem(array_of_navitems,array_of_todos[i]);
                 if(shouldUpdate){
                     var newItem = todoItem.addNavItem({
-                        name:array_of_todos[i].item,
-                        iconUrl:(!array_of_todos[i].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
+                        name:array_of_todos[array_of_todos.length - 1].item,
+                        iconUrl:(!array_of_todos[array_of_todos.length - 1].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
                     });
                     array_of_navitems.push({
                         navItem:newItem,
-                        item:array_of_todos[i].item,
-                        description:array_of_todos[i].description,
-                        checked:array_of_todos[i].checked
+                        item:array_of_todos[array_of_todos.length - 1].item,
+                        description:array_of_todos[array_of_todos.length - 1].description,
+                        checked:array_of_todos[array_of_todos.length - 1].checked
                     })
+                    break;
                 }
 
             }
@@ -106,7 +109,6 @@ chrome.extension.sendMessage({}, function(response) {
 
                     if(!isTodo){
                         if(threadRowView.getThreadID() == _threadID){
-
                             $.ajax({
                                 url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
                                 type:"POST",
@@ -121,7 +123,7 @@ chrome.extension.sendMessage({}, function(response) {
                                     });
                                     array_of_todos.push(response)
                                 }
-                            })
+                            });
 
                         }
 
