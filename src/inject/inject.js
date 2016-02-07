@@ -22,7 +22,7 @@ chrome.extension.sendMessage({}, function(response) {
           }
         }
 
-       function deleteNavItem(array_of_navItems,todo_object){
+       function shouldUpdateNavItem(array_of_navItems,todo_object){
            // we are going to iterate through the array of NavItem given to us
            // check if the property of the NavItem todo is the same as the todo object given to us
            // if it is not the same, we delete the navItem and return true
@@ -33,6 +33,9 @@ chrome.extension.sendMessage({}, function(response) {
                            array_of_navItems[item].navItem.remove();
                            return true;
                        }
+                   } else if(array_of_navItems[item].description != todo_object.description){
+                       // this condition also checks if the item is not even in the list of navItem and return true
+                       return true;
                    }
                }
            } else {
@@ -73,8 +76,8 @@ chrome.extension.sendMessage({}, function(response) {
             for(var i = 0; i < array_of_todos.length; i++){
                 console.log(array_of_navitems[i]);
                 console.log(array_of_todos[i]);
-                var deleted = deleteNavItem(array_of_navitems,array_of_todos[i]);
-                if(deleted){
+                var shouldUpdate = shouldUpdateNavItem(array_of_navitems,array_of_todos[i]);
+                if(shouldUpdate){
                     var newItem = todoItem.addNavItem({
                         name:array_of_todos[i].item,
                         iconUrl:(!array_of_todos[i].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
