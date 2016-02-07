@@ -2,10 +2,15 @@ chrome.extension.sendMessage({}, function(response) {
 
     InboxSDK.load('1', 'Hello World!').then(function(sdk){
 
-        var array_of_todos = [];
-        //object type {thread_id, todoItem, checked}
+        var array_of_todos = []; //object type {thread_id, item, checked}
+        var array_of_navitems = []; // object type{navItem, item, description, checked}
 
-        function checkIfIsTodo(array,thread_id){
+        var todoItem = sdk.NavMenu.addNavItem({
+            name: "Todos",
+            iconUrl: "https://i.imgur.com/52FWtfw.png"
+        });
+
+       function checkIfIsTodo(array,thread_id){
           if(array.length == 0){
             return false;
           } else {
@@ -17,6 +22,25 @@ chrome.extension.sendMessage({}, function(response) {
           }
         }
 
+       function deleteNavItem(array_of_navItems,todo_object){
+           // we are going to iterate through the array of NavItem given to us
+           // check if the property of the NavItem todo is the same as the todo object given to us
+           // if it is not the same, we delete the navItem and return true
+            if(array_of_navItems.length > 0){
+               for(var item = 0; item < array_of_navitems.length; item++){
+                   if(array_of_navItems[item].description = todo_object.description){
+                       if(array_of_navItems[item].checked != todo_object.checked){
+                           array_of_navItems[item].navItem.remove();
+                           return true;
+                       }
+                   }
+               }
+           } else {
+               return true;
+           }
+
+       }
+
        // fetch all the todos from the api and add to array of todos
         $.ajax({
             url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
@@ -25,6 +49,16 @@ chrome.extension.sendMessage({}, function(response) {
 
                 for(var i = 0; i < response.length; i++){
                     array_of_todos.push(response[i])
+                    var newItem = todoItem.addNavItem({
+                        name:response[i].item,
+                        iconUrl:(!response[i].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
+                    })
+                    array_of_navitems.push({
+                        navItem:newItem,
+                        item:response[i].item,
+                        description:response[i].description,
+                        checked:response[i].checked
+                    })
                 }
 
 
@@ -35,16 +69,24 @@ chrome.extension.sendMessage({}, function(response) {
         // we add new todo items to the list of todos
         Array.observe(array_of_todos, function(changes){
             // the SDK has been loaded, now do something with it!
-            
-            var todoItem = sdk.NavMenu.addNavItem({
-                name: "Todos",
-                iconUrl: "https://i.imgur.com/52FWtfw.png"
-            });
+
             for(var i = 0; i < array_of_todos.length; i++){
-                todoItem.addNavItem({
-                    name:array_of_todos[i].item,
-                    iconUrl:(!array_of_todos[i].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
-                })
+                console.log(array_of_navitems[i]);
+                console.log(array_of_todos[i]);
+                var deleted = deleteNavItem(array_of_navitems,array_of_todos[i]);
+                if(deleted){
+                    var newItem = todoItem.addNavItem({
+                        name:array_of_todos[i].item,
+                        iconUrl:(!array_of_todos[i].checked ? "http://www.dotnetcart.com/demov4/Styles/images/icons/icon-pricetable-false.png" : "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLOGxjHDWICicw_XZ5mvtyu-h9_W7QcrB131SQsG453Y-zzlT2")
+                    });
+                    array_of_navitems.push({
+                        navItem:newItem,
+                        item:array_of_todos[i].item,
+                        description:array_of_todos[i].description,
+                        checked:array_of_todos[i].checked
+                    })
+                }
+
             }
 
 
