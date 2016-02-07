@@ -76,7 +76,7 @@ chrome.extension.sendMessage({}, function(response) {
         // we add new todo items to the list of todos
         Array.observe(array_of_todos, function(changes){
             // the SDK has been loaded, now do something with it!
-                console.log(changes)
+                console.log(changes);
             for(var i = 0; i < array_of_todos.length; i++){
                 var shouldUpdate = shouldUpdateNavItem(array_of_navitems,array_of_todos[i]);
                 if(shouldUpdate){
@@ -89,12 +89,11 @@ chrome.extension.sendMessage({}, function(response) {
                         item:array_of_todos[array_of_todos.length - 1].item,
                         description:array_of_todos[array_of_todos.length - 1].description,
                         checked:array_of_todos[array_of_todos.length - 1].checked
-                    })
+                    });
                     break;
                 }
 
             }
-
 
         })
 
@@ -134,7 +133,7 @@ chrome.extension.sendMessage({}, function(response) {
                         for(var i = 0; i < array_of_todos.length; i++){
                             if(array_of_todos[i].description == _threadID){
                                 var cache_item = array_of_todos[i];
-                                cache_item.checked = true;
+                                cache_item.checked = !array_of_todos[i].checked;
                                 array_of_todos.splice(i,1);
                                 array_of_todos.push(cache_item)
                                 break;
@@ -145,8 +144,42 @@ chrome.extension.sendMessage({}, function(response) {
                 }
             });
 
+            var emitter; //variable name to hoist the emitter to
+            var stream = Kefir.stream(function(inEmitter){
+                emitter = inEmitter;
+                return function(){}; //we need to return a function that gets called when the stream ends
+            });
+            threadRowView.addLabel(stream);
+
+
+            Array.observe(array_of_todos, function(changes){
+                console.log(changes);
+                for(var i = 0; i < array_of_todos.length; i++){
+                    var _threadID = threadRowView._threadRowViewDriver._cachedThreadID;
+                    if(_threadID == array_of_todos[i].description){
+                        if(array_of_todos[i].checked == true){
+                            emitter.emit(null);
+                            emitter.emit({
+                                title:"Todo Completed",
+                                foregroundColor:"#fff",
+                                backgroundColor:"#91c661"
+                            })
+
+
+                        } else {
+                            emitter.emit({
+                                title:"Todo Item",
+                                foregroundColor:"#fff",
+                                backgroundColor:"#bdbdbd"
+                            })
+                        }
+                    }
+                }
+            })
 
         })
+
+
 
 
 
