@@ -1,0 +1,10 @@
+/**
+ * Place your custom CSS styles here.
+ **/
+
+.hTop_logo_left{
+    display: inline-block;
+    float: left;
+    font-size: 10px;
+    margin-right: 30px;
+}
