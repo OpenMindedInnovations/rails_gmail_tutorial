@@ -23,9 +23,19 @@ chrome.extension.sendMessage({}, function(response) {
         }
 
        function shouldUpdateNavItem(array_of_navItems,todo_object){
-           // we are going to iterate through the array of NavItem given to us
-           // check if the property of the NavItem todo is the same as the todo object given to us
-           // if it is not the same, we delete the navItem and return true
+           /**
+            This function iterates throught the array of navitems looking for a nav item that has the same property has the todo list item given to is
+            if the description of both are the same (note description is the email thread_id which is unique)
+               we check for the equality of the navitem item checked property with the todo_object checked property
+               if they are equal we delete the navItem and return true
+
+            We also return true if the description is different and if the navitems is empty
+
+            This is done because a navItem doesn't expose an update function but only a add child or remove function
+            so to reduce adding multiple navItem with the same thread_id (description) to the sidebar whenever the user changes the state of a todo
+            item we delete the previous one and add a new one... something like using es6 Object.assign({},old_val, new_val)..
+
+           */
             if(array_of_navItems.length > 0){
 
                for(var item = 0; item < array_of_navitems.length; item++){
@@ -136,10 +146,26 @@ chrome.extension.sendMessage({}, function(response) {
                                 cache_item.checked = !array_of_todos[i].checked;
                                 array_of_todos.splice(i,1);
                                 array_of_todos.push(cache_item)
+                                $.ajax({
+                                    url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
+                                    type:"DELETE",
+                                    data:{
+                                        todo : { item:cache_item.item, checked:true, description:cache_item.description}
+                                    },
+                                    success:function(response){
+
+                                        sdk.Widgets.showModalView({
+                                            el:"<h3>New todo Item Updated</h3>",
+                                            title:"Edit Todo"
+                                        });
+
+                                    }
+                                });
+
                                 break;
                             }
                         }
-                    }
+  }
 
                 }
             });
