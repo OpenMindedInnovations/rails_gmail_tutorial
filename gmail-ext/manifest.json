@@ -1,9 +1,9 @@
 {
-  "name": "CHANGE THIS : Extension boilerplate",
+  "name": "Rails + Gmail = Awesome",
   "version": "0.0.1",
   "manifest_version": 2,
-  "description": "This extension was created with the awesome extensionizr.com",
-  "homepage_url": "http://extensionizr.com",
+  "description": "Simple rails + gmail extension integration",
+  "homepage_url": "http://opemindedinnnovations.com",
   "icons": {
     "16": "icons/icon48.png",
     "48": "icons/icon48.png",
@@ -22,24 +22,8 @@
     "default_title": "page action demo",
     "default_popup": "src/page_action/page_action.html"
   },
-  "chrome_url_overrides": {
-    "newtab": "src/override/override.html"
-  },
-  "permissions": [
-    "bookmarks",
-    "clipboardRead",
-    "clipboardWrite",
-    "contextMenus",
-    "cookies",
-    "history",
-    "notifications",
-    "tabs",
-    "geolocation",
-    "declarativeContent"
-
-  ],
   "omnibox": {
-    "keyword": "extensionizr"
+    "keyword": "opemindedinnnovations"
   },
   "content_scripts": [
 
