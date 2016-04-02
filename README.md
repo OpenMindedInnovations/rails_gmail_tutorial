@@ -1,27 +1,21 @@
-** While playing around the internet recently, I found this cool app streak that brings your CRM (full meaning) into your Google Mail (gmail) account, and thought to try to whip out something cool with my gmail using a tool developed by streak engineers (InboxSDK) and Slack.**
+### Rails + Gmail Extension = Awesome
 
-So in this blog, I'll be detailing how i built a minimalistic gmail todoApp extension using the following tools outlined below:
+I was playing with this really cool app called [Streak](https://www.streak.com/) that brings a CRM (Customer Relationship Manager) into your gmail. It impressed me how much it improved my gmail, so I decided to experiment with something like this myself. I found the Streak team made [InboxSDK](https://www.inboxsdk.com/), which allows you to easily make gmail extensions on your own. I also wanted gmail interactions like adding a todo to save to my web apps so I integrated it with a Rails API to test this out.
 
-1) Rails
+In this blog, I'll be detailing how I built a minimalistic gmail "Todo App" extension using the following tools outlined below:
 
+1. [Rails](http://rubyonrails.org/)
+2. [InboxSDK](https://www.inboxsdk.com/)
+3. [Kefir](https://rpominov.github.io/kefir/)
+4. [Extensionizr](http://extensionizr.com)
+5. [jQuery](https://jquery.com/)
 
-2) jQuery
+Our app will allow users to add email threads to their todo lists and mark those emails as "complete". The gmail extension will hit the rails api every time a todo is updated or created.
 
+### Creating Our Rails App
+Here we'll just be needing a simple todo model and controller that creates a todo item and updates the checked state of the todo. We'll have actions for creating todos, updating todos, and listing todos.
 
-3) Rails Slack-notifier gem (https://github.com/stevenosloan/slack-notifier)
-
-
-4) InboxSDK (https://www.inboxsdk.com/)
-
-
-5) Kefir (https://rpominov.github.io/kefir/)
-
-Our app will allow users add email threads to their todo lists. With Rails we'll be able to store the thread and notify Slack of any changes to the state of each todo item.
-
-**Creating our Rails App**.
-Here we'll just be needing a simple todo Model and Controller that creates a todo item and updates the checked state of the todo
-
-```
+```sh
 $ rails new TodoApp
 $ cd TodoApp
 $ bundle install
@@ -29,69 +23,25 @@ $ rails g resource Todo item:string description:string checked:boolean
 
 ```
 
+```ruby
+# config/routes.rb
 
-###### Let the root go to the todos index
-config/routes.rb
-
-```
 Rails.application.routes.draw do
-  root 'welcome#index'
-
   resources :todos
 end
 ```
 
-###### We start by just creating an index action
+```ruby
+# app/controllers/todos_controller.rb
 
-app/controllers/todos_controller.rb
-
-```
-class TodosController < ApplicationController
-  def index
-
-  end
-end
-
-```
-
-###### Since we intend responding to our client with JSON and not html, we will be editing our todos controller (app/controllers/todos_controller.rb) to make it respond appropriately depending on how we're accessing its methods.
-
-###### We also return all the todos in our index action
-
-app/controllers/todos_controller.rb
-
-
-```
 class TodosController < ApplicationController
   respond_to :json
+
+  before_filter :find_todo, only: [:update]
 
   def index
       @todos = Todo.all
       respond_with(@todos)
-  end
-
-end
-```
-
-###### Now lets add out basic CRU (Create, Read and Update) actions to our controller;
-###### In this tutorial we'll not be deleting any todo item. We'll just be updating their checked(completed) state;
-
-app/controllers/todos_controller.rb
-
-```
-class TodosController < ApplicationController
-  respond_to :json
-
-  # before the action in method :show && :update are called, call method find_todo
-  before_filter :find_todo, :only => [:show, :update]
-
-  def index
-      @todos = Todo.all
-      respond_with(@todos)
-  end
-
-  def new
-    @todo = Todo.new
   end
 
   def create
@@ -104,10 +54,6 @@ class TodosController < ApplicationController
     end
   end
 
-  def show
-    respond_with(@todo)
-  end
-
   def update
     # respond with the todo object if the todo updates successfully
     if @todo.update(todo_params)
@@ -117,17 +63,15 @@ class TodosController < ApplicationController
     end
   end
 
-
   private
   def todo_params
     params.require(:todo).permit(
-        :item,
-        :checked,
-        :description
+      :item,
+      :checked,
+      :description
     )
   end
 
-  private
   def find_todo
     @todo = Todo.find(params[:id])
   end
@@ -136,123 +80,21 @@ end
 
 ```
 
-###### Now we want our todo app to update slack when a todo item is created and when a todo item is updated, to do this we need a gem(slack-notifier) and also need a slack team account setup and a slack integration created ... To set up slack please visit <a href="https://api.slack.com/incoming-webhooks">Slack Integration Setup</a>
+### Enable CORS
 
-###### We are going to add <code>  gem 'slack-notifier </code> to our Gemfile
-###### We run $ bundle install
+Our gmail extension needs to send api calls to our rails app from a different origin, so we need to enable CORS.
 
-###### So what we want to do now is tell rails to send a notification to slack whenever a todo item is created
-######    at this point i expect you to have your webhook url from slack, if you haven't please go a step back
+```ruby
+# Gemfile
 
-###### So we add
-
-```
-require 'slack-notifier'
-# respond with a success notification and the user project object
-notifier = Slack::Notifier.new "https://hooks.slack.com/services/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"
-notifier.ping "Todo Added:"+@todo.item, icon_url: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR6t41ErQxx0y1rApv207bM3LznQVdvOILrYy-XTUVg3JpxGvRn"
-
-
-
+gem "rack-cors", :require => "rack/cors"
 ```
 
-to our # app/controllers/todos_controller.rb create method and we have
-
-app/controllers/todos_controller.rb
-
-```
-class TodosController < ApplicationController
-  respond_to :json
-
-  before_filter :find_todo, :only => [:show]
-
-  def index
-      @todos = Todo.all
-      respond_with(@todos)
-  end
-
-  def new
-    @todo = Todo.new
-  end
-
-  def create
-    @todo = Todo.create(todo_params)
-    if @todo.save
-    require 'slack-notifier'
-    # respond with a success notification and the user project object
-    notifier = Slack::Notifier.new "https://hooks.slack.com/services/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"
-    notifier.ping "Todo Added:"+@todo.item, icon_url: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR6t41ErQxx0y1rApv207bM3LznQVdvOILrYy-XTUVg3JpxGvRn"
-    respond_with(@todo)
-    else
-      respond_with(nil, @message = "Error while creating Todo")
-    end
-  end
-
-  def show
-    respond_with(@todo)
-  end
-
-  def destroy
-    @todo = Todo.find(params[:id])
-    if @todo.update(checked: true)
-        require 'slack-notifier'
-        # respond with a success notification and the user project object
-        notifier = Slack::Notifier.new "https://hooks.slack.com/services/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"
-        notifier.ping "Todo Completed:"+@todo.item, icon_url: "https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR6t41ErQxx0y1rApv207bM3LznQVdvOILrYy-XTUVg3JpxGvRn"
-        respond_with(@todo)
-    else
-        respond_with(nil, @message = "Todo Update Failed")
-    end
-  end
-
-
-  private
-  def todo_params
-    params.require(:todo).permit(
-        :item,
-        :checked,
-        :description
-    )
-  end
-
-  private
-  def find_todo
-    @todo = Todo.find(params[:id])
-  end
-
-end
-
-
-```
-
-###### Lets get into building the todo gmail extension but before we do that we need to cancels rails csrf protection and also either set up SSL on our local system or push to heroku as gmail wont allow not https connections. I preferably went with using heroku because its easy to set up...
-
-config/application.rb
-
-```
-require File.expand_path('../boot', __FILE__)
-
-require 'rails/all'
-
-# Require the gems listed in Gemfile, including any gems
-# you've limited to :test, :development, or :production.
-Bundler.require(*Rails.groups)
+```ruby
+# config/application.rb
 
 module TodoApp
   class Application < Rails::Application
-    # Settings in config/environments/* take precedence over those specified here.
-    # Application configuration should go into files in config/initializers
-    # -- all .rb files in that directory are automatically loaded.
-
-    # Set Time.zone default to the specified zone and make Active Record auto-convert to this zone.
-    # Run "rake -D time" for a list of tasks for finding time zone names. Default is UTC.
-    # config.time_zone = 'Central Time (US & Canada)'
-
-    # The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.
-    # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
-    # config.i18n.default_locale = :de
-
-    # Do not swallow errors in after_commit/after_rollback callbacks.
     config.active_record.raise_in_transactional_callbacks = true
 
     config.middleware.insert_before 0, "Rack::Cors" do
@@ -261,19 +103,22 @@ module TodoApp
         resource '*', :headers => :any, :methods => [:get, :post, :options, :delete, :put, :patch], credentials: true
       end
     end
-
-
   end
 end
 
 ```
-###### To setup your rails project on heroku just follow
-###### <a href="https://devcenter.heroku.com/articles/getting-started-with-rails4"> this guide </a>
+
+### Enable HTTPS
+All gmail extensions require connections to be https, so I hosted the app on heroku to quickly enable this. I'm not going to cover how to launch an app to heroku, but you can follow this [guide](https://devcenter.heroku.com/articles/getting-started-with-rails4). 
+
+You could also set up SSL on your local machine, but it was much easier to just host on heroku.
 
 
-###### Now we move to the gmail side of things =>
+### Setting up your gmail extension
 
-###### We will be making a chrome extension that whenever we visit mail.google.com (our gmail) shows up and allows us to add email threads as a todo to rails
+There is a tool called [Extensionizr](http://extensionizr.com/!#{"modules":["hidden-mode","with-bg","with-persistent-bg","no-options","no-override"],"boolean_perms":[],"match_ptrns":[]}) that sets up an initial chrome extension for you to develop on. Go to that link and get the boilerplate that we'll be modifying.
+
+We'll be making chrome extension using inboxSDK that automatically connects a todo label to each email and allows us to add email threads as a todo to rails
 
 ###### To get more info on Gmail extension and to get a gmail extension boilerplate visit the following links
 

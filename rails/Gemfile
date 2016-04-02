@@ -32,12 +32,6 @@ gem 'sdoc', '~> 0.4.0', group: :doc
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 
-gem 'slack-ruby-client'
-gem 'eventmachine'
-gem 'faye-websocket'
-
-gem 'slack-notifier'
-
 gem 'pg'
 
 gem 'thin'
