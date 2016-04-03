@@ -1,5 +1,5 @@
 {
-  "name": "Rails + Gmail = Awesome",
+  "name": "Rails/Gmail Todo App",
   "version": "0.0.1",
   "manifest_version": 2,
   "description": "Simple rails + gmail extension integration",
@@ -18,7 +18,7 @@
   },
   "options_page": "src/options/index.html",
   "page_action": {
-    "default_icon": "icons/icon19.png",
+    "default_icon": "icons/icon48.png",
     "default_title": "page action demo",
     "default_popup": "src/page_action/page_action.html"
   },
@@ -26,7 +26,6 @@
     "keyword": "opemindedinnnovations"
   },
   "content_scripts": [
-
     {
       "matches": [
         "https://mail.google.com/*"
@@ -40,8 +39,8 @@
         "https://mail.google.com/*"
       ],
       "js": [
-        "js/jquery/jquery.min.js",
-        "js/inboxsdk/inboxsdk.js",
+        "js/jquery.min.js",
+        "js/inboxsdk.js",
         "js/kefir.min.js",
         "src/inject/inject.js"
       ]

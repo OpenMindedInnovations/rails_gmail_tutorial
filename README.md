@@ -29,6 +29,7 @@ $ rails g resource Todo item:string description:string checked:boolean
 Rails.application.routes.draw do
   resources :todos
 end
+
 ```
 
 ```ruby
@@ -88,6 +89,7 @@ Our gmail extension needs to send api calls to our rails app from a different or
 # Gemfile
 
 gem "rack-cors", :require => "rack/cors"
+
 ```
 
 ```ruby
@@ -116,94 +118,59 @@ You could also set up SSL on your local machine, but it was much easier to just 
 
 ### Setting up your gmail extension
 
-There is a tool called [Extensionizr](http://extensionizr.com/!#{"modules":["hidden-mode","with-bg","with-persistent-bg","no-options","no-override"],"boolean_perms":[],"match_ptrns":[]}) that sets up an initial chrome extension for you to develop on. Go to that link and get the boilerplate that we'll be modifying.
+The gmail extension will be injecting code into gmail to add email threads as todos and mark those email threads as complete. We'll be making chrome extension using inboxSDK, which makes gmail extensions easy to build.
 
-We'll be making chrome extension using inboxSDK that automatically connects a todo label to each email and allows us to add email threads as a todo to rails
-
-###### To get more info on Gmail extension and to get a gmail extension boilerplate visit the following links
-
-###### We will be building a page_action chrome extension because we want to be able to inject custom styles and javascript to pages or a specific page
-
-###### A quick approach to setting a chrome extension project is <a href="http://extensionizr.com/!#{"modules":["page-mode","with-bg","with-persistent-bg","no-options","no-override","inject-css","inject-js"],"boolean_perms":[],"match_ptrns":[]}"> Extensionizr</a>
-
-###### Just select
+To start, we're going to get a chrome extension boilerplate from [Extensionizr](http://extensionizr.com/!#{"modules":["hidden-mode","with-bg","with-persistent-bg","no-options","no-override"],"boolean_perms":[],"match_ptrns":[]}). Go to that link and download the boilerplate that we'll be modifying.
 
 --> 000.png <-----
 
-###### Since we only want our extension to be active when the user visits his or gmail account we will be editing our
+Now we can add the third party libraries that we'll be using in the extension. 
 
-src/bg/background.js
+1. [InboxSDK](https://www.inboxsdk.com/) to easily inject code into gmail.
+2. [Kefir.js](https://rpominov.github.io/kefir/) will allow for reactive updates when we add and update todos.
+3. [jQuery](https://jquery.com/) will be sending ajax calls to to our rails app.
 
-###### by adding
+All of the libraries should be placed in the js folder of the chrome extension app. 
 
-```
+---> 001.png <----
+
+Next we will need to edit the src/bg/background.js file so our extension to be active when the user visits their gmail account.
+
+```js
+// src/bg/background.js
+
 chrome.runtime.onInstalled.addListener(function() {
-    // Replace all rules ...
-    chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
-        // With a new rule ...
-        chrome.declarativeContent.onPageChanged.addRules([
-            {
-                // That fires when a page's URL contains a 'mail.google.com' ...
-                conditions: [
-                    new chrome.declarativeContent.PageStateMatcher({
-                        pageUrl: { urlContains: 'mail.google.com' },
-                    })
-                ],
-                // And shows the extension's page action.
-                actions: [ new chrome.declarativeContent.ShowPageAction() ]
-            }
-        ]);
-    });
+  // Replace all rules ...
+  chrome.declarativeContent.onPageChanged.removeRules(undefined, function() {
+    // With a new rule ...
+    chrome.declarativeContent.onPageChanged.addRules([
+      {
+        // Fires when a page's URL contains a 'mail.google.com' ...
+        conditions: [
+          new chrome.declarativeContent.PageStateMatcher({
+            pageUrl: { urlContains: 'mail.google.com' },
+          })
+        ],
+        // And shows the extension's page action.
+        actions: [ new chrome.declarativeContent.ShowPageAction() ]
+      }
+    ]);
+  });
 });
 
-
 ```
 
-###### #Since will be using InboxSDK a library created by Streak which gives us the ability to add UI (like labels, side navigation, compose button details) to the gmail interface, we will also be using kefir a stream api that allows us to listen to changes and emit actions based on these changes.... We will also be using kefir as a wrapper around some of our Ui components to allow us to emit changes to them based on changes in Todo Item state. I'll personally advise to read more on Streak, InboxSDK and Streams (Kefir). Since we can't go into details in any of them at the moment.
+Now we can create our initial manifest.json file to load in the libraries and set our background file. While we are creating our manfiest.json, we can also add inject.css file that will need to be injected into gmail. When adding scripts that need to be inserted, we are also adding the "matches" option so they are only added on the gmail app.
 
-So download the inboxsdk.js && kefir.min.js file and put it in
-
-src/inject
-folder, so we have our project dir has
-
------> 001.png <-----
-
-At this point we have all the libraries we want to inject and the first thing we will want to do is start working in gmail but unfortunately gmail doesn't allow us this free access. We have to explicitly state in our manifest.json file the files we want to inject into the page... we can easily do that by adding
-
-```
-
-  "content_scripts": [
-
-    {
-      "matches": [
-        "https://mail.google.com/*"
-      ],
-      "css": [
-        "src/inject/inject.css"
-      ]
-    },
-    {
-      "matches": [
-        "https://mail.google.com/*"
-      ],
-      "js": [
-        "js/jquery/jquery.min.js",
-        "js/inboxsdk/inboxsdk.js",
-        "js/kefir.min.js",
-        "src/inject/inject.js"
-      ]
-    }
-  ]
-
-
-// so our new manifest.json file is
+```js
+// manifest.json
 
 {
-  "name": "Todo Gmail App",
+  "name": "Rails/Gmail Todo App",
   "version": "0.0.1",
   "manifest_version": 2,
-  "description": "This extension was created with the awesome extensionizr.com",
-  "homepage_url": "http://extensionizr.com",
+  "description": "Simple rails + gmail extension integration",
+  "homepage_url": "http://opemindedinnnovations.com",
   "icons": {
     "16": "icons/icon48.png",
     "48": "icons/icon48.png",
@@ -218,31 +185,14 @@ At this point we have all the libraries we want to inject and the first thing we
   },
   "options_page": "src/options/index.html",
   "page_action": {
-    "default_icon": "icons/icon19.png",
+    "default_icon": "icons/icon48.png",
     "default_title": "page action demo",
     "default_popup": "src/page_action/page_action.html"
   },
-  "chrome_url_overrides": {
-    "newtab": "src/override/override.html"
-  },
-  "permissions": [
-    "bookmarks",
-    "clipboardRead",
-    "clipboardWrite",
-    "contextMenus",
-    "cookies",
-    "history",
-    "notifications",
-    "tabs",
-    "geolocation",
-    "declarativeContent"
-
-  ],
   "omnibox": {
-    "keyword": "extensionizr"
+    "keyword": "opemindedinnnovations"
   },
   "content_scripts": [
-
     {
       "matches": [
         "https://mail.google.com/*"
@@ -256,8 +206,8 @@ At this point we have all the libraries we want to inject and the first thing we
         "https://mail.google.com/*"
       ],
       "js": [
-        "js/jquery/jquery.min.js",
-        "js/inboxsdk/inboxsdk.js",
+        "js/jquery.min.js",
+        "js/inboxsdk.js",
         "js/kefir.min.js",
         "src/inject/inject.js"
       ]
@@ -265,60 +215,45 @@ At this point we have all the libraries we want to inject and the first thing we
   ]
 }
 
-
 ```
 
-to the manifest.json. This injected files are called content scripts and can be either js or css files of any size.
+### Building the gmail extension
 
+The first thing we will want to do is edit our inject.js and load InboxSDK. One cool thing I found about this library is that it asynchronously loads all of the other scripts, which means we don't need to worry about re-downloading and repacking whenever we make changes to the library.
 
-SO LETS MOVE STRAIGHT INTO GMAIL AND BUILDING OUR TODO App
+```js
+// src/inject/inject.js
 
-The first thing we will want to do is edit our inject.js and load the InboxSDK... One cool thing about this library is that it lets us just download a very small file and the main InboxSDK file that does all the work is loaded asynchronously which means we don't really need to worry about re-downloading and repacking whenever they make changes to the library
-
-src/inject/inject.js
-
-```
 chrome.extension.sendMessage({}, function(response) {
-
-    InboxSDK.load('1', 'Hello World!').then(function(sdk){
-
-        // all the codes pertaining to the inboxsdk should be found here
-
-    });
-
+  InboxSDK.load('1', 'Hello World!').then(function(sdk){
+    // all the codes pertaining to the inboxsdk should be found here
+  });
 });
 
-
 ```
 
+We'll start with the todo list that will be loaded into the gmail sidebar on the left. This will contain all of our todo items we create. We will be using the InboxSDK NavItem to create this.
 
-First thing we will be creating a Todo Sidebar dropdown component, this component will be the parent to all our todo items created. We will be using the InboxSDK NavItem #put link here to do this, so we will add
+```js
+// src/inject/inject.js
 
-```
 var todoItem = sdk.NavMenu.addNavItem({
-          name: "Todos",
-          iconUrl: "https://i.imgur.com/52FWtfw.png"
-      });
-
-```
-
-
-to src/inject/inject.js
-
-
-Now what we want to do is add a button to all the email threads in gmail, when the user clicks this button the particular email thread ID is gotten and the email description which we then use to create a todo item.
-
-So to do that we are going to be using the inboxSdk threadRowView; but we will have to register a threadRowViewHandlder, using the <code>sdk.List</code> which expects a callback where it passes us a threadRowView for us to manipulate the threadRowView..
-
-src/inject/inject.js
-
-```
-sdk.Lists.registerThreadRowViewHandler(function(threadRowView){
-
-  // perform all list manipulation here
-
+  name: "Todos",
+  iconUrl: "https://i.imgur.com/52FWtfw.png"
 });
 
+```
+
+Now what we want to do is add a button to all the email threads in gmail that lets the user create a todo that's associated with that email thread. We'll be using the InboxSdk threadRowView for this.
+
+The threadRowViewHandlder has to be registered using the sdk.List to use the threadRowView. This exposes the threadRowView in a callback where we can manipulate it.
+
+```js
+// src/inject/inject.js
+
+sdk.Lists.registerThreadRowViewHandler(function(threadRowView){
+  // perform all list manipulation here
+});
 
 ```
 
@@ -329,8 +264,8 @@ Using the <code>threadRowView</code> passed to us lets add button to all the ema
 var threadBtnEmmiter;
 
 var threadBtnStream = Kefir.stream(function(inEmitter){
-    threadBtnEmmiter = inEmitter;
-    return function(){}; //we need to return a function that gets called when the stream ends
+  threadBtnEmmiter = inEmitter;
+  return function(){}; //we need to return a function that gets called when the stream ends
 });
 
 threadRowView.addButton(threadBtnStream);
