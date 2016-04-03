@@ -1,6 +1,6 @@
 chrome.extension.sendMessage({}, function(response) {
 
-  InboxSDK.load('sdk_rails-gmail_aa430103a9', 'Hello World!').then(function(sdk){
+  InboxSDK.load('1', 'sdk_rails-gmail_aa430103a9').then(function(sdk){
 
     var todoItem = sdk.NavMenu.addNavItem({
         name: "Todos",
