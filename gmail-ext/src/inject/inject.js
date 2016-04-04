@@ -145,166 +145,161 @@ chrome.extension.sendMessage({}, function(response) {
             // send ajax request to server to update todo
             for(var i = 0; i < array_of_todos.length; i++){
               if(array_of_todos[i].description == _threadID){
-                  var cache_item = array_of_todos[i];
-                  cache_item.checked = !array_of_todos[i].checked;
-                  array_of_todos.splice(i,1);
-                  array_of_todos.push(cache_item)
-                  $.ajax({
-                    url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
-                    type:"DELETE",
-                    data:{
-                      todo : { item:cache_item.item, checked:true, description:cache_item.description}
-                    },
-                    success:function(response){
-                      sdk.Widgets.showModalView({
-                          el:"<h3>New todo Item Updated</h3>",
-                          title:"Edit Todo"
-                      });
-                    }
-                  });
+                var cache_item = array_of_todos[i];
+                cache_item.checked = !array_of_todos[i].checked;
+                array_of_todos.splice(i,1);
+                array_of_todos.push(cache_item)
+                $.ajax({
+                  url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
+                  type:"DELETE",
+                  data:{
+                    todo : { item:cache_item.item, checked:true, description:cache_item.description}
+                  },
+                  success:function(response){
+                    sdk.Widgets.showModalView({
+                      el:"<h3>New todo Item Updated</h3>",
+                      title:"Edit Todo"
+                    });
+                  }
+                });
 
-                  break;
-                }
+                break;
               }
             }
           }
-        })
+        }
+      })
 
-        Array.observe(array_of_todos, function(changes){
-          for(var i = 0; i < array_of_todos.length; i++){
-            var _threadID = threadRowView._threadRowViewDriver._cachedThreadID;
-            if(_threadID == array_of_todos[i].description){
-                if(array_of_todos[i].checked == true){
-                  emitter.emit(null);
-                  emitter.emit({
-                      title:"Todo Completed",
-                      foregroundColor:"#fff",
-                      backgroundColor:"#91c661"
-                  })
+      Array.observe(array_of_todos, function(changes){
+        for(var i = 0; i < array_of_todos.length; i++){
+          var _threadID = threadRowView._threadRowViewDriver._cachedThreadID;
+          if(_threadID == array_of_todos[i].description){
+            if(array_of_todos[i].checked == true){
+              emitter.emit(null);
+              emitter.emit({
+                title:"Todo Completed",
+                foregroundColor:"#fff",
+                backgroundColor:"#91c661"
+              })
 
-                  threadBtnEmmiter.emit(null);
-                  threadBtnEmmiter.emit({
-                    iconUrl:"http://pontifolio.com/img/green-image.jpg",
-                    onClick:function(event){
-                      var _threadID = event.threadRowView._threadRowViewDriver._cachedThreadID;
-                      var isTodo = checkIfIsTodo(array_of_todos,threadRowView.getThreadID());
-                      if(!isTodo){
-                        if(threadRowView.getThreadID() == _threadID){
+              threadBtnEmmiter.emit(null);
+              threadBtnEmmiter.emit({
+                iconUrl:"http://pontifolio.com/img/green-image.jpg",
+                onClick:function(event){
+                  var _threadID = event.threadRowView._threadRowViewDriver._cachedThreadID;
+                  var isTodo = checkIfIsTodo(array_of_todos,threadRowView.getThreadID());
+                  if(!isTodo){
+                    if(threadRowView.getThreadID() == _threadID){
+                      $.ajax({
+                        url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
+                        type:"POST",
+                        data:{
+                            todo : { item:threadRowView.getSubject(), checked:false, description:_threadID}
+                        },
+                        success:function(response){
+                          sdk.Widgets.showModalView({
+                            el:"<h3>New todo Item Created</h3>",
+                            title:"Add Todo"
+                          });
+                          array_of_todos.push(response)
+                        }
+                      });
+                    }
+                  } else {
+                    // delete from todo list when we uncheck by
+                    // send ajax request to server to update todo
+                    for(var i = 0; i < array_of_todos.length; i++){
+                      if(array_of_todos[i].description == _threadID){
+                        var cache_item = array_of_todos[i];
+                        cache_item.checked = !array_of_todos[i].checked;
+                        array_of_todos.splice(i,1);
+                        array_of_todos.push(cache_item)
+                        $.ajax({
+                          url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
+                          type:"DELETE",
+                          data:{
+                            todo : { item:cache_item.item, checked:true, description:cache_item.description}
+                          },
+                          success:function(response){
+                            sdk.Widgets.showModalView({
+                              el:"<h3>New todo Item Updated</h3>",
+                              title:"Edit Todo"
+                            });
+                          }
+                        });
+
+                        break;
+                      }
+                    }
+                  }
+                }
+                })
+
+              } else {
+                threadBtnEmmiter.emit(null);
+                threadBtnEmmiter.emit({
+                  iconUrl:"https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR6t41ErQxx0y1rApv207bM3LznQVdvOILrYy-XTUVg3JpxGvRn",
+                  onClick:function(event){
+
+                    var _threadID = event.threadRowView._threadRowViewDriver._cachedThreadID;
+                    var isTodo = checkIfIsTodo(array_of_todos,threadRowView.getThreadID());
+
+                    if(!isTodo){
+                      if(threadRowView.getThreadID() == _threadID){
+                        $.ajax({
+                          url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
+                          type:"POST",
+                          data:{
+                            todo : { item:threadRowView.getSubject(), checked:false, description:_threadID}
+                          },
+                          success:function(response){
+                            sdk.Widgets.showModalView({
+                              el:"<h3>New todo Item Created</h3>",
+                              title:"Add Todo"
+                            });
+                            array_of_todos.push(response)
+                          }
+                        });
+                      }
+                    } else {
+                      // delete from todo list when we uncheck by
+                      // send ajax request to server to update todo
+                      for(var i = 0; i < array_of_todos.length; i++){
+                        if(array_of_todos[i].description == _threadID){
+                          var cache_item = array_of_todos[i];
+                          cache_item.checked = !array_of_todos[i].checked;
+                          array_of_todos.splice(i,1);
+                          array_of_todos.push(cache_item)
                           $.ajax({
-                            url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
-                            type:"POST",
+                            url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
+                            type:"DELETE",
                             data:{
-                                todo : { item:threadRowView.getSubject(), checked:false, description:_threadID}
+                              todo : { item:cache_item.item, checked:true, description:cache_item.description}
                             },
                             success:function(response){
                               sdk.Widgets.showModalView({
-                                el:"<h3>New todo Item Created</h3>",
-                                title:"Add Todo"
+                                el:"<h3>New todo Item Updated</h3>",
+                                title:"Edit Todo"
                               });
-                              array_of_todos.push(response)
                             }
                           });
-                        }
-                      } else {
-                        // delete from todo list when we uncheck by
-                        // send ajax request to server to update todo
-                        for(var i = 0; i < array_of_todos.length; i++){
-                          if(array_of_todos[i].description == _threadID){
-                            var cache_item = array_of_todos[i];
-                            cache_item.checked = !array_of_todos[i].checked;
-                            array_of_todos.splice(i,1);
-                            array_of_todos.push(cache_item)
-                            $.ajax({
-                              url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
-                              type:"DELETE",
-                              data:{
-                                todo : { item:cache_item.item, checked:true, description:cache_item.description}
-                              },
-                              success:function(response){
-                                sdk.Widgets.showModalView({
-                                  el:"<h3>New todo Item Updated</h3>",
-                                  title:"Edit Todo"
-                                });
-                              }
-                            });
 
-                            break;
-                          }
+                          break;
                         }
                       }
                     }
-                    })
-
-                  } else {
-                    threadBtnEmmiter.emit(null);
-                    threadBtnEmmiter.emit({
-                      iconUrl:"https://encrypted-tbn3.gstatic.com/images?q=tbn:ANd9GcR6t41ErQxx0y1rApv207bM3LznQVdvOILrYy-XTUVg3JpxGvRn",
-                      onClick:function(event){
-
-                        var _threadID = event.threadRowView._threadRowViewDriver._cachedThreadID;
-                        var isTodo = checkIfIsTodo(array_of_todos,threadRowView.getThreadID());
-
-                        if(!isTodo){
-                            if(threadRowView.getThreadID() == _threadID){
-                                $.ajax({
-                                    url:"https://afternoon-ocean-92308.herokuapp.com/todos/",
-                                    type:"POST",
-                                    data:{
-                                        todo : { item:threadRowView.getSubject(), checked:false, description:_threadID}
-                                    },
-                                    success:function(response){
-
-                                        sdk.Widgets.showModalView({
-                                            el:"<h3>New todo Item Created</h3>",
-                                            title:"Add Todo"
-                                        });
-                                        array_of_todos.push(response)
-                                    }
-                                });
-
-                            }
-
-                        } else {
-                          // delete from todo list when we uncheck by
-                          // send ajax request to server to update todo
-                          for(var i = 0; i < array_of_todos.length; i++){
-                            if(array_of_todos[i].description == _threadID){
-                              var cache_item = array_of_todos[i];
-                              cache_item.checked = !array_of_todos[i].checked;
-                              array_of_todos.splice(i,1);
-                              array_of_todos.push(cache_item)
-                              $.ajax({
-                                  url:"https://afternoon-ocean-92308.herokuapp.com/todos/"+cache_item.id,
-                                  type:"DELETE",
-                                  data:{
-                                      todo : { item:cache_item.item, checked:true, description:cache_item.description}
-                                  },
-                                  success:function(response){
-
-                                      sdk.Widgets.showModalView({
-                                          el:"<h3>New todo Item Updated</h3>",
-                                          title:"Edit Todo"
-                                      });
-
-                                  }
-                              });
-
-                              break;
-                            }
-                          }
-                        }
-                      }
-                    })
-
-                    emitter.emit({
-                        title:"Todo Item",
-                        foregroundColor:"#fff",
-                        backgroundColor:"#bdbdbd"
-                    })
                   }
-                }
+                })
+
+                emitter.emit({
+                  title:"Todo Item",
+                  foregroundColor:"#fff",
+                  backgroundColor:"#bdbdbd"
+                })
+              }
             }
-        })
+        }
+      })
     })
   });
 });
