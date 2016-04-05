@@ -42,6 +42,7 @@
         "js/jquery.min.js",
         "js/inboxsdk.js",
         "js/kefir.min.js",
+        "js/lodash.core.js",
         "src/inject/inject.js"
       ]
     }
